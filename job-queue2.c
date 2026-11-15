@@ -1,25 +1,54 @@
-#include <malloc.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <pthread.h>
+
+#define NUM_JOBS    10
+#define NUM_THREADS 3
 
 struct job {
   /* Link field for linked list.  */
-  struct job* next; 
+  struct job* next;
 
   /* Other fields describing work to be done... */
+  int id;
 };
 
 /* A linked list of pending jobs.  */
 struct job* job_queue;
 
-extern void process_job (struct job*);
-
 /* A mutex protecting job_queue.  */
 pthread_mutex_t job_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/* A trivial job: report which thread handled it, then simulate work.  */
+void process_job (struct job* job)
+{
+  printf ("thread %lu: processing job %d\n",
+          (unsigned long) pthread_self (), job->id);
+  usleep (100000);  /* 100 ms */
+}
+
+/* Allocate a new job and push it onto the front of the queue.  */
+void enqueue_job (int id)
+{
+  struct job* new_job = malloc (sizeof (struct job));
+  if (new_job == NULL) {
+    perror ("malloc");
+    exit (EXIT_FAILURE);
+  }
+  new_job->id = id;
+
+  pthread_mutex_lock (&job_queue_mutex);
+  new_job->next = job_queue;
+  job_queue = new_job;
+  pthread_mutex_unlock (&job_queue_mutex);
+}
 
 /* Process queued jobs until the queue is empty.  */
 
 void* thread_function (void* arg)
 {
+  (void) arg;  /* unused */
   while (1) {
     struct job* next_job;
 
@@ -50,3 +79,26 @@ void* thread_function (void* arg)
   return NULL;
 }
 
+int main (void)
+{
+  pthread_t threads[NUM_THREADS];
+  int i;
+
+  /* Fill the queue BEFORE starting the threads: a worker exits as soon
+     as it finds the queue empty.  */
+  for (i = 1; i <= NUM_JOBS; i++)
+    enqueue_job (i);
+
+  for (i = 0; i < NUM_THREADS; i++) {
+    if (pthread_create (&threads[i], NULL, thread_function, NULL) != 0) {
+      fprintf (stderr, "pthread_create failed\n");
+      return EXIT_FAILURE;
+    }
+  }
+
+  for (i = 0; i < NUM_THREADS; i++)
+    pthread_join (threads[i], NULL);
+
+  printf ("all jobs done\n");
+  return EXIT_SUCCESS;
+}
