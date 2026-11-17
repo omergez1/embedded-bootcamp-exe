@@ -1,19 +1,16 @@
 # embedded-bootcamp-exe
 
-Exercises from a Linux user-space programming course: processes, signals,
-POSIX threads, synchronization and IPC in C.
+A collection of small exercises from an Embedded Linux course, written in C.
 
-Each exercise is a standalone C file.
+Exercises cover topics from across the course, such as processes, signals,
+threads, synchronization and inter-process communication. Each one is a
+standalone source file, and new exercises are added as the course goes on.
 
-## Exercises
+## Build
 
-| File | Topic |
-|---|---|
-| `job-queue2.c` | Thread job queue protected by a mutex, with jobs allocated using `malloc` |
-
-## Build and run
+Most exercises build with a single gcc command. Threaded ones need `-lpthread`:
 
 ```bash
-gcc -Wall -Wextra job-queue2.c -o job-queue2 -lpthread
-./job-queue2
+gcc -Wall -Wextra <exercise>.c -o <exercise> -lpthread
+./<exercise>
 ```
