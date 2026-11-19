@@ -1,3 +1,14 @@
-job-queue2
 CLAUDE.md
 practice/
+
+# compiled user-space binaries (one line per exercise)
+job-queue2/job-queue2
+
+# kernel module build artifacts
+*.o
+*.ko
+*.mod
+*.mod.c
+.*.cmd
+Module.symvers
+modules.order
